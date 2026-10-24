@@ -3,6 +3,16 @@
 # Base: PHP 8.4 + servidor FrankenPHP (Caddy) con las extensiones que usa Snip.
 FROM dunglas/frankenphp:1-php8.4 AS base
 RUN install-php-extensions pdo_pgsql opcache intl zip
+
+# Render no concede capacidades extra al contenedor. Si el binario de FrankenPHP
+# las trae (para abrir los puertos 80/443), exec falla con "Operation not permitted".
+# Escuchamos en un puerto alto, así que no las necesitamos.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libcap2-bin \
+    && getcap /usr/local/bin/frankenphp \
+    && (setcap -r /usr/local/bin/frankenphp || true) \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # 1) Dependencias de PHP (solo producción).
