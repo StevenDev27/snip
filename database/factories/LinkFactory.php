@@ -21,7 +21,18 @@ class LinkFactory extends Factory
             'code' => Link::generateCode(),
             'original_url' => fake()->url(),
             'expires_at' => null,
+            'owner_token' => null,
         ];
+    }
+
+    /**
+     * Indicate the visitor that created the link.
+     */
+    public function ownedBy(string $ownerToken): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'owner_token' => $ownerToken,
+        ]);
     }
 
     /**

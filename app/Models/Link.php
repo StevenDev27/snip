@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,13 +12,29 @@ class Link extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['code', 'original_url', 'expires_at'];
+    protected $fillable = ['code', 'original_url', 'expires_at', 'owner_token'];
 
     protected $casts = ['expires_at' => 'datetime'];
 
     public function clicks(): HasMany
     {
         return $this->hasMany(Click::class);
+    }
+
+    /**
+     * Enlaces de ejemplo (sin dueño) y los del visitante identificado por el token.
+     *
+     * @param  Builder<Link>  $query
+     */
+    public function scopeVisibleTo(Builder $query, ?string $ownerToken): void
+    {
+        $query->where(function (Builder $query) use ($ownerToken): void {
+            $query->whereNull('owner_token');
+
+            if ($ownerToken !== null) {
+                $query->orWhere('owner_token', $ownerToken);
+            }
+        });
     }
 
     public function getRouteKeyName(): string

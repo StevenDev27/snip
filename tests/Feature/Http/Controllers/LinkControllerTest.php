@@ -4,13 +4,31 @@ use App\Models\Click;
 use App\Models\Link;
 
 describe('index', function () {
-    it('lists links with their click count', function () {
-        $link = Link::factory()->has(Click::factory()->count(3))->create();
+    it('lists the visitor links with their click count', function () {
+        $link = Link::factory()->ownedBy('token-a')->has(Click::factory()->count(3))->create();
 
-        $this->get(route('links.index'))
+        $this->withCookie('snip_owner', 'token-a')
+            ->get(route('links.index'))
             ->assertOk()
             ->assertSee($link->shortUrl())
             ->assertViewHas('links', fn ($links) => $links->first()->clicks_count === 3);
+    });
+
+    it('hides links that belong to other visitors', function () {
+        $other = Link::factory()->ownedBy('token-b')->create();
+
+        $this->withCookie('snip_owner', 'token-a')
+            ->get(route('links.index'))
+            ->assertOk()
+            ->assertDontSee($other->shortUrl());
+    });
+
+    it('lists the demo links for visitors without a cookie', function () {
+        $demo = Link::factory()->create();
+
+        $this->get(route('links.index'))
+            ->assertOk()
+            ->assertSee($demo->shortUrl());
     });
 
     it('shows an empty state when there are no links', function () {
@@ -32,6 +50,20 @@ describe('store', function () {
         expect($link->original_url)->toBe('https://laravel.com/docs')
             ->and($link->code)->toHaveLength(6)
             ->and($link->expires_at)->toBeNull();
+    });
+
+    it('issues an owner cookie to first-time visitors', function () {
+        $this->post(route('links.store'), ['original_url' => 'https://laravel.com/docs'])
+            ->assertCookie('snip_owner');
+
+        expect(Link::sole()->owner_token)->not->toBeNull();
+    });
+
+    it('assigns the link to the visitor identified by the cookie', function () {
+        $this->withCookie('snip_owner', 'token-a')
+            ->post(route('links.store'), ['original_url' => 'https://laravel.com/docs']);
+
+        expect(Link::sole()->owner_token)->toBe('token-a');
     });
 
     it('stores the expiration at the end of the chosen day', function () {
