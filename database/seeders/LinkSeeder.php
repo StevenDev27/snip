@@ -35,6 +35,17 @@ class LinkSeeder extends Seeder
         null,
     ];
 
+    /**
+     * @var array<int, string>
+     */
+    private const USER_AGENTS = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
+    ];
+
     public function run(): void
     {
         foreach (self::DEMOS as $demo) {
@@ -57,19 +68,19 @@ class LinkSeeder extends Seeder
             $day = now()->subDays($daysAgo);
             $trend = 0.5 + (29 - $daysAgo) / 29;
             $weekend = $day->isWeekend() ? 0.6 : 1.0;
-            $count = (int) round($popularity * $trend * $weekend * fake()->randomFloat(2, 0.6, 1.4));
+            $count = (int) round($popularity * $trend * $weekend * (random_int(60, 140) / 100));
             $lastHour = $daysAgo === 0 ? max(now()->hour, 7) : 23;
 
             for ($i = 0; $i < $count; $i++) {
                 $rows[] = [
                     'link_id' => $link->id,
                     'clicked_at' => $day->copy()->setTime(
-                        fake()->numberBetween(7, $lastHour),
-                        fake()->numberBetween(0, 59),
-                        fake()->numberBetween(0, 59),
+                        random_int(7, $lastHour),
+                        random_int(0, 59),
+                        random_int(0, 59),
                     ),
-                    'referer' => fake()->randomElement(self::REFERERS),
-                    'user_agent' => fake()->userAgent(),
+                    'referer' => self::REFERERS[array_rand(self::REFERERS)],
+                    'user_agent' => self::USER_AGENTS[array_rand(self::USER_AGENTS)],
                 ];
             }
         }

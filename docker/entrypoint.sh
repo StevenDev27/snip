@@ -5,7 +5,7 @@ php artisan migrate --force
 
 # Solo en el primer despliegue: RUN_DEMO_SEED=true carga los enlaces de ejemplo.
 if [ "$RUN_DEMO_SEED" = "true" ]; then
-    php artisan db:seed --class=LinkSeeder --force
+    php artisan db:seed --class=LinkSeeder --force || echo "El seeder falló; la app arranca sin datos de ejemplo."
 fi
 
 php artisan config:cache
